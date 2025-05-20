@@ -123,3 +123,80 @@ $$;
 
 call sp_active_customer(3)
 ```
+
+## Soluciones
+### Ejercicio 1
+```
+CREATE OR REPLACE PROCEDURE
+listar_por_category(
+  category_name in varchar
+  total out numeric
+)
+language plpgsql as $$ 
+begin
+  select count(*)
+  into total
+  from category c
+  inner join film_category fc
+  on fc.category_id = c.category_id
+  where c.name = category_name
+end;
+$$;
+```
+```
+call listar_por_catefory('Family', null)
+```
+### Ejercicio 2 y 3
+Son similares al anterior, osea pichis.
+### Ejecicio 4
+```
+create or replace procedure
+activar_clientes(
+  storeId in numeric
+)
+language plpgsql as $$
+declare
+  customer record;
+begin
+  
+  for customerRow in
+    select p.customer_id, count(*)
+    from payment p 
+    inner join customer c
+    on c.customer_id = p.customer_id
+    where c.store_id = storeId
+    group by p.customer_id;
+  loop
+    update customer
+    set activebool = true
+    where customer_id = customerRow.customer_id;
+  end loop;
+end;
+$$;
+```
+### Eliminar un procedure
+```
+drop procedure activar_clientes;
+```
+
+### Crear un JSON
+```
+select json_agg(f.title)
+from film f
+```
+
+```
+select c.name, json_agg(
+  json_build_object(  
+    'film_id', f.film_id,
+    'title', f.title,
+    'description', f.description
+  )
+)
+from category c
+inner join film_category fc
+on fc.category_id = c.category_id
+inner join film f
+on fc.film_id = film_id
+group by c.name
+```
